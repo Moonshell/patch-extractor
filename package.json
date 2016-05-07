@@ -1,6 +1,6 @@
 {
   "name": "patch-extractor",
-  "version": "0.1.0",
+  "version": "0.0.5",
   "description": "Help you compare tow directory, and extact the diffrent files between them.",
   "main": "main.js",
   "scripts": {

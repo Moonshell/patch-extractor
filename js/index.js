@@ -12,9 +12,10 @@ DropManager.register({
     holder: $('#box_fromVersion')[0],
     hoverClass: 'hover',
     onDrop: function (file, holder) {
-        var text = $(holder).find('.text');
-        text.innerHTML = file.path;
-        text.style.fontSize = '16px';
+        var $holder = $(holder),
+            $text = $holder.find('.text');
+        $holder.removeClass('empty');
+        $text.html(file.path);
     }
 });
 
@@ -22,19 +23,28 @@ DropManager.register({
     holder: $('#box_toVersion')[0],
     hoverClass: 'hover',
     onDrop: function (file, holder) {
-        var text = $(holder).find('.text');
-        text.innerHTML = file.path;
-        text.style.fontSize = '16px';
+        var $holder = $(holder),
+            $text = $holder.find('.text');
+        $holder.removeClass('empty');
+        $text.html(file.path);
     }
 });
 
 $('#btn_compare').on('click', function () {
-    var fromPath = $('#box_fromVersion .text').html(),
-        toPath = $('#box_toVersion .text').html();
+    var $fromHolder = $('#box_fromVersion'),
+        $toHolder = $('#box_toVersion');
 
-    if(!fromPath) {
-        alert('没选择旧版位置');
+    if ($fromHolder.is('.empty')) {
+        alert('没选择旧版本位置');
         return;
     }
+
+    if ($toHolder.is('.empty')) {
+        alert('没选择新版本位置');
+        return;
+    }
+
+    var fromPath = $fromHolder.find('.text').html(),
+        toPath = $toHolder.find('.text').html();
 });
 

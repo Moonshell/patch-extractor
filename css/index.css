@@ -54,9 +54,11 @@ code {
   width: 1%;
   height: 200px; }
   .holder .text {
+    font-size: 16px;
     color: #45828E;
-    font-size: 28px;
     text-align: center; }
+  .holder.empty .text {
+    font-size: 28px; }
   .holder.hover {
     background-color: #7BDCEF; }
 
@@ -75,5 +77,3 @@ code {
     text-decoration: none; }
   .btn:active {
     background: rgba(0, 0, 0, 0.1); }
-
-/*# sourceMappingURL=index.css.map */
