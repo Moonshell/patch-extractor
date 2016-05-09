@@ -56,7 +56,7 @@ module.exports = {
             child = path.relative(fromRootDir, fromChild);
             toChild = path.resolve(toRootDir, child);
             if (!toMap[toChild]) {
-                result.deleted.push(fromChild);
+                result.deleted.push(child);
             }
         }
         // 再跑一遍新目录的成员
@@ -68,7 +68,7 @@ module.exports = {
             fromChild = path.resolve(fromRootDir, child);
             // 先检测创建的新成员
             if (!fromMap[fromChild]) {
-                result.created.push(toChild);
+                result.created.push(child);
             } else {
                 // 如果不是新创建的，则先确保是否类型对应
                 if (fromMap[fromChild] !== toMap[toChild]) {
@@ -84,7 +84,7 @@ module.exports = {
                 }
                 // 是文件的话，检测是否有改动
                 else if (this.isFileModified(fromChild, toChild)) {
-                    result.modified.push(toChild);
+                    result.modified.push(child);
                 }
             }
         }

@@ -4,6 +4,7 @@
 
 var fs = require('fs'),
     path = require('path'),
+    childProcess = require('child_process'),
 
     DropManager = require('./drop-manager'),
     DirectoryComparer = require('./directory-comparer'),
@@ -89,23 +90,59 @@ function showResult(result) {
     }
 
     if (result.deleted.length) {
-        $list.append($('<li class="deleted"/>').html('删除文件：'));
+        $list.append($('<li/>').html('删除文件：'));
         result.deleted.forEach(function (filePath) {
-            $list.append($('<li/>').html(filePath));
+            $list.append($('<li class="deleted"/>').html(filePath));
         });
     }
 
     if (result.created.length) {
-        $list.append($('<li class="created"/>').html('新增文件：'));
+        $list.append($('<li/>').html('新增文件：'));
         result.created.forEach(function (filePath) {
-            $list.append($('<li/>').html(filePath));
+            $list.append($('<li class="created"/>').html(filePath));
         });
     }
 
     if (result.modified.length) {
-        $list.append($('<li class="modified"/>').html('修改文件：'));
+        $list.append($('<li/>').html('修改文件：'));
         result.modified.forEach(function (filePath) {
-            $list.append($('<li/>').html(filePath));
+            $list.append($('<li class="modified"/>').html(filePath));
         });
     }
 }
+
+$('#btn_makePatch').on('click', function () {
+    var $btn = $('#btn_makePatch'),
+        $toHolder = $('#box_toVersion'),
+        toPath = $toHolder.find('.text').html(),
+        exePath = path.resolve('./7z.exe');
+
+    $btn.attr('data-html', $btn.html()).html('打包中…');
+
+    var files = [],
+        now = Date.now(),
+        fileListName = 'file_list_' + now + '.txt',
+        fileListPath = path.resolve(toPath, fileListName);
+
+    $('#lst_diffList').find('li.modified,li.created').each(function () {
+        files.push($(this).html());
+    });
+
+    fs.writeFileSync(fileListPath, files.join('\n'));
+
+    var ls = childProcess.spawn(exePath, ['a', '-tzip', '../patch_' + now + '.zip', '@' + fileListName], {
+        cwd: toPath
+    });
+    ls.stdout.on('data', function (data) {
+        console.log(String(data));
+    });
+    ls.stderr.on('data', function (data) {
+        console.error(String(data));
+    });
+    ls.on('exit', function (code) {
+        console.log('7z child process exited with code ' + code);
+        fs.unlink(fileListPath);
+        $btn.html($btn.attr('data-html'));
+        alert('补丁制作完毕！');
+    });
+});
