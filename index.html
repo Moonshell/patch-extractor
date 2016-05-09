@@ -14,20 +14,36 @@
 
 <div class="container">
 
-    <div class="holder-row">
-        <div id="box_fromVersion" class="holder empty">
-            <p class="text">旧版本拖到这里</p>
+    <div class="step" data-step="1">
+        <div class="holder-row">
+            <div class="holder empty" id="box_fromVersion">
+                <p class="text">旧版本拖到这里</p>
+            </div>
+
+            <div class="holder empty" id="box_toVersion">
+                <p class="text">新版本拖到这里</p>
+            </div>
         </div>
 
-        <div id="box_toVersion" class="holder empty">
-            <p class="text">新版本拖到这里</p>
+        <a class="btn" id="btn_compare">开始比对</a>
+    </div>
+    <div class="step" data-step="2">
+        <div class="holder-row">
+            <div class="holder">
+                <ul class="diff-list" id="lst_diffList"></ul>
+            </div>
         </div>
+
+        <a class="btn" id="btn_makePatch">制作补丁</a>
+    </div>
+    <div class="step" data-step="3">
+
     </div>
 
-    <a id="btn_compare" class="btn compare">开始比对</a>
-    <a id="btn_makePatch" class="btn make-patch">制作补丁</a>
+    <a class="btn" id="btn_restart">重新开始</a>
 
-    <ul id="lst_diffList" class="diff-list"></ul>
+    <ul class="msg-list" id="lst_msgList"></ul>
+
 </div>
 
 <script> require('./js/index'); </script>

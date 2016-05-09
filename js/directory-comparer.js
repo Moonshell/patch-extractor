@@ -5,49 +5,86 @@
 var fs = require('fs'),
     path = require('path');
 
+try {
+    fs = require('original-fs');
+} catch (e) {
+}
+
 module.exports = {
-    process: function (fromDir, toDir) {
+    process: function (fromRootDir, toRootDir, relPath, _result) {
+        var fromDir = path.resolve(fromRootDir, relPath || ''),
+            toDir = path.resolve(toRootDir, relPath || '');
+        // 预先检查路径是否有误
         this.checkDirectories(fromDir, toDir);
         var fromChildren = fs.readdirSync(fromDir),
             toChildren = fs.readdirSync(toDir),
             fromMap = {},
-            toMap = {};
+            toMap = {},
+            CHILD_TYPE = {
+                FILE: 1,
+                DIRECTORY: 2
+            };
 
-        fromChildren.forEach(function (fromChild) {
-            fromMap[fromChild] = true;
+        // 建立旧目录与新目录的键缓存
+        fromChildren.map(function (child) {
+            var extName = path.extname(child),
+                fromChild = path.resolve(fromDir, child),
+                stat = fs.statSync(fromChild);
+            fromMap[fromChild] = extName !== '.asar' && stat.isDirectory() ? CHILD_TYPE.DIRECTORY : CHILD_TYPE.FILE;
+            return fromChild;
         });
-        toChildren.forEach(function (toChild) {
-            toMap[toChild] = true;
+        toChildren.map(function (child) {
+            var extName = path.extname(child),
+                toChild = path.resolve(toDir, child),
+                stat = fs.statSync(toChild);
+            toMap[toChild] = extName !== '.asar' && stat.isDirectory() ? CHILD_TYPE.DIRECTORY : CHILD_TYPE.FILE;
+            return toChild;
         });
 
-        // Todo: 区分文件与目录的不同比较
+        var result = _result || {
+                created: [],
+                deleted: [],
+                modified: []
+            };
+        var child, fromChild, toChild;
 
-        var result = {
-            newFiles: [],
-            deletedFiles: [],
-            modifiedFiles: []
-        }, child, fromChild, toChild;
-
-        for (child in fromMap) {
-            if (!fromMap.hasOwnProperty(child)) {
+        // 先跑一遍旧目录的成员，筛选被删掉的成员
+        for (fromChild in fromMap) {
+            if (!fromMap.hasOwnProperty(fromChild)) {
                 continue;
             }
-            fromChild = path.resolve(fromDir, child);
-            if (!toMap[child]) {
-                result.deletedFiles.push(fromChild);
+            child = path.relative(fromRootDir, fromChild);
+            toChild = path.resolve(toRootDir, child);
+            if (!toMap[toChild]) {
+                result.deleted.push(fromChild);
             }
         }
-        for (child in toMap) {
-            if (!toMap.hasOwnProperty(child)) {
+        // 再跑一遍新目录的成员
+        for (toChild in toMap) {
+            if (!toMap.hasOwnProperty(toChild)) {
                 continue;
             }
-            toChild = path.resolve(toDir, child);
-            fromChild = path.resolve(fromDir, child);
-            if (!fromMap[child]) {
-                result.newFiles.push(toChild);
+            child = path.relative(toRootDir, toChild);
+            fromChild = path.resolve(fromRootDir, child);
+            // 先检测创建的新成员
+            if (!fromMap[fromChild]) {
+                result.created.push(toChild);
             } else {
-                if (this.isFileModified(fromChild, toChild)) {
-                    result.modifiedFiles.push(toChild);
+                // 如果不是新创建的，则先确保是否类型对应
+                if (fromMap[fromChild] !== toMap[toChild]) {
+                    if (toMap[toChild] === CHILD_TYPE.FILE) {
+                        throw new Error('新文件不能与旧目录同名：' + toChild);
+                    } else {
+                        throw new Error('新目录不能与旧文件同名：' + toChild);
+                    }
+                }
+                // 再检测是否目录，目录则递归
+                if (toMap[toChild] === CHILD_TYPE.DIRECTORY) {
+                    this.process(fromRootDir, toRootDir, child, result);
+                }
+                // 是文件的话，检测是否有改动
+                else if (this.isFileModified(fromChild, toChild)) {
+                    result.modified.push(toChild);
                 }
             }
         }
@@ -55,6 +92,12 @@ module.exports = {
         return result;
     },
     checkDirectories: function (fromDir, toDir) {
+        if (!fs.existsSync(fromDir)) {
+            throw new Error('旧版路径不存在');
+        }
+        if (!fs.existsSync(toDir)) {
+            throw new Error('新版路径不存在');
+        }
         var fromStat = fs.statSync(fromDir),
             toStat = fs.statSync(toDir);
         if (!fromStat.isDirectory()) {
@@ -66,8 +109,23 @@ module.exports = {
     },
     isFileModified: function (fromFile, toFile) {
         var fromStat = fs.statSync(fromFile),
-            toStat = fs.statSync(toFile);
-        return (fromStat.size !== toStat.size ||
-        fromStat.mtime !== toStat.mtime);
+            toStat = fs.statSync(toFile),
+            bufferCompare = Buffer['compare'];
+        if (!bufferCompare) {
+            throw new Error('未找到 Buffer.compare 方法，请检查 Node 版本');
+        }
+        // 先比较文件基本属性
+        if (fromStat.size !== toStat.size) {
+            return true;
+        }
+        try {
+            var fromBuffer = fs.readFileSync(fromFile),
+                toBuffer = fs.readFileSync(toFile);
+            // 再比较文件内容
+            return (bufferCompare(fromBuffer, toBuffer) !== 0);
+        } catch (e) {
+            debugger;
+            throw e;
+        }
     }
 };
