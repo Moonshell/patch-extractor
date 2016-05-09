@@ -10,7 +10,6 @@
   "author": "krimeshu",
   "license": "ISC",
   "dependencies": {
-    "electron-prebuilt": "^0.37.3",
-    "node-7z": "^0.4.0"
+    "electron-prebuilt": "^0.37.3"
   }
 }
