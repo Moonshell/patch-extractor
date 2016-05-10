@@ -130,7 +130,7 @@ $('#btn_makePatch').on('click', function () {
 
     fs.writeFileSync(fileListPath, files.join('\n'));
 
-    var ls = childProcess.spawn(exePath, ['a', '-tzip', '../patch_' + now + '.zip', '@' + fileListName], {
+    var ls = childProcess.spawn(exePath, ['a', '-t7z', '../patch_' + now + '.7z', '@' + fileListName], {
         cwd: toPath
     });
     ls.stdout.on('data', function (data) {
